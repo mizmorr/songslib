@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
@@ -60,7 +59,7 @@ func (r *SongRepository) GetVerses(ctx context.Context, song model.Song, pageOpt
 
 func (r *SongRepository) getLines(song model.Song, minPos, maxPos int) ([]string, error) {
 	var lines []string
-	conditionString := r.ConditionStringBuilder(song)
+	conditionString := r.conditionStringBuilder(song)
 	query := fmt.Sprintf(`
 				SELECT line
 				FROM unnest(string_to_array((select lyrics from songs where %s), E'\n')) WITH ORDINALITY AS lines(line, position)
@@ -72,30 +71,27 @@ func (r *SongRepository) getLines(song model.Song, minPos, maxPos int) ([]string
 	return lines, nil
 }
 
-func (r *SongRepository) ConditionStringBuilder(song model.Song) string {
-	t := reflect.TypeOf(song)
-	v := reflect.ValueOf(song)
+func (r *SongRepository) conditionStringBuilder(song model.Song) string {
+	var (
+		typeStruct  = reflect.TypeOf(song)
+		valueStruct = reflect.ValueOf(song)
+		condString  strings.Builder
+	)
 
-	var condString strings.Builder
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		value := v.Field(i).Interface()
+	if song.ID != 0 {
+		return fmt.Sprintf("ID ='%d'", song.ID)
+	}
+
+	for i := 0; i < typeStruct.NumField(); i++ {
+		field := typeStruct.Field(i)
+		value := valueStruct.Field(i).Interface()
 
 		if !r.isEmpty(value) {
-			log.Println(value)
 			if condString.Len() > 0 {
 				condString.WriteString(" AND ")
 			}
-			if reflect.TypeOf(value) == reflect.TypeOf(gorm.Model{}) {
-				condString.WriteString("ID ='" + fmt.Sprint(song.ID) + "'")
-			} else {
-
-				// need to escape single quotes in string values
-				valueCorrectToSql := strings.ReplaceAll(value.(string), "'", "''")
-
-				condString.WriteString(field.Name + "='" + valueCorrectToSql + "'")
-			}
-
+			valueCorrectToSql := strings.ReplaceAll(value.(string), "'", "''")
+			condString.WriteString(field.Name + "='" + valueCorrectToSql + "'")
 		}
 
 	}
