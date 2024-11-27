@@ -44,6 +44,11 @@ func (r *SongRepository) Delete(ctx context.Context, model model.Song) error {
 	return nil
 }
 
+func (r *SongRepository) Update(ctx context.Context, song model.Song) error {
+	result := r.db.Model(&song).Where("id = ?", song.ID).Updates(song)
+	return result.Error
+}
+
 func (r *SongRepository) GetVerses(ctx context.Context, song model.Song, pageOpt model.Page) (*model.Verse, error) {
 	offset := (pageOpt.Number - 1) * pageOpt.Size
 	minPos := offset
