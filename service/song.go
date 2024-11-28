@@ -57,3 +57,19 @@ func (ws *SongWebService) Update(ctx context.Context, song *model.SongRequestUpd
 	}
 	return nil
 }
+
+func (ws *SongWebService) GetVersesOfSong(ctx context.Context, song *model.Song, pageOpts *model.Page) (*model.Verse, error) {
+	verse, err := ws.store.Song.GetVerses(ctx, song, pageOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "svc.Song.GetVerseOfSong")
+	}
+	return verse, nil
+}
+
+func (ws *SongWebService) GetAllFiltredPaginated(ctx context.Context, song *model.Song, pageOpts *model.Page) (int64, []*model.Song, error) {
+	totalSongs, songs, err := ws.store.Song.GetAllFiltredPaginated(ctx, song, pageOpts)
+	if err != nil {
+		return totalSongs, nil, errors.Wrap(err, "svc.Song.GetAllFiltredPaginated")
+	}
+	return totalSongs, songs, nil
+}

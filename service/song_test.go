@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/mizmorr/songslib/internal/model"
@@ -118,5 +119,103 @@ func TestUpdate(t *testing.T) {
 	err = store.Pg.Unscoped().Delete(&songToUpdate).Error
 	if err != nil {
 		t.Errorf("[TestDelete] Failed to delete song: %v", err)
+	}
+}
+
+func TestGetVerses(t *testing.T) {
+	songGet := &model.SongRequestGet{
+		Name:   "Yesterday",
+		Band:   "The Beatles",
+		Lyrics: "All my troubles seemed so far away,\nNow it looks as though they’re here to stay.\nOh, I believe in yesterday.",
+	}
+	pageOpts := &model.Page{
+		Number: 1,
+		Size:   1,
+	}
+	expectedVerse := &model.Verse{
+		Song:   "Yesterday",
+		Band:   "The Beatles",
+		Number: 1,
+		Lines:  []string{"All my troubles seemed so far away,"},
+	}
+
+	ctx := context.Background()
+
+	store, err := store.New(ctx)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to connect to the database: %v", err)
+	}
+
+	id, err := store.Song.Create(ctx, songGet.ToDB())
+
+	sws, err := NewSongWebService(ctx, store)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Expected a non-nil SongWebService, got %v+ ", err)
+	}
+	verse, err := sws.GetVersesOfSong(ctx, songGet.ToDB(), pageOpts)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to get verses: %v", err)
+	}
+
+	if !reflect.DeepEqual(verse, expectedVerse) {
+		t.Errorf("[TestGetVerses] Expected %+v, got %+v", expectedVerse, verse)
+	}
+
+	songGet.ID = id
+	err = store.Pg.Unscoped().Delete(songGet.ToDB()).Error
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
+	}
+}
+
+func TestGetFiltredPaginated(t *testing.T) {
+	var (
+		id      uint = 1
+		songGet      = &model.SongRequestGet{
+			ID:     id,
+			Name:   "Yesterday",
+			Band:   "The Beatles",
+			Lyrics: "All my troubles seemed so far away,\nNow it looks as though they’re here to stay.\nOh, I believe in yesterday.",
+		}
+		songForFiltrPattern = &model.Song{
+			Name: "Yes",
+			Band: "The Be",
+		}
+		pageOpts = &model.Page{
+			Number: 1,
+			Size:   1,
+		}
+		expectedReturnedCount int64 = 1
+		ctx                         = context.Background()
+	)
+	store, err := store.New(ctx)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to connect to the database: %v", err)
+	}
+
+	_, err = store.Song.Create(ctx, songGet.ToDB())
+
+	sws, err := NewSongWebService(ctx, store)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Expected a non-nil SongWebService, got %v+ ", err)
+	}
+
+	returnedCount, selectedSongs, err := sws.GetAllFiltredPaginated(ctx, songForFiltrPattern, pageOpts)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to get verses: %v", err)
+	}
+
+	if returnedCount != expectedReturnedCount {
+		t.Errorf("[TestGetVerses] Expected %d returned songs, got %d", expectedReturnedCount, returnedCount)
+	}
+
+	if selectedSongs[0].ID != id {
+		t.Errorf("[TestGetVerses] Expected id %+v, got %+v", id, selectedSongs[0].ID)
+	}
+
+	songGet.ID = id
+	err = store.Pg.Unscoped().Delete(songGet.ToDB()).Error
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
 	}
 }
