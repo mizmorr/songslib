@@ -20,7 +20,12 @@ type SongRequestDelete struct {
 	ID     uint   `json:"id" `
 	Lyrics string `json:"lyrics"`
 }
-
+type SongRequestGet struct {
+	Band   string `json:"band"`
+	Name   string `json:"name"`
+	ID     uint   `json:"id" `
+	Lyrics string `json:"lyrics"`
+}
 type SongRequestUpdate struct {
 	Band   string `json:"band"`
 	Name   string `json:"name"`
@@ -65,6 +70,17 @@ func (s *SongRequestDelete) ToDB() *Song {
 }
 
 func (s *SongRequestUpdate) ToDB() *Song {
+	return &Song{
+		Model: gorm.Model{
+			ID: s.ID,
+		},
+		Band:   s.Band,
+		Name:   s.Name,
+		Lyrics: s.Lyrics,
+	}
+}
+
+func (s *SongRequestGet) ToDB() *Song {
 	return &Song{
 		Model: gorm.Model{
 			ID: s.ID,
