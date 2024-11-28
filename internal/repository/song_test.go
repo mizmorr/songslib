@@ -11,7 +11,8 @@ import (
 )
 
 func TestNewSongRepository(t *testing.T) {
-	db, err := pg.Dial()
+	ctx := context.Background()
+	db, err := pg.Dial(ctx)
 	if err != nil {
 		t.Errorf("[TestNewSongRepository] Failed to connect to the database: %v", err)
 	}
@@ -27,7 +28,7 @@ func TestCreate(t *testing.T) {
 		ctx             = context.Background()
 		expectedID uint = 1
 	)
-	db, err := pg.Dial()
+	db, err := pg.Dial(ctx)
 	if err != nil {
 		t.Errorf("[TestCreate] Failed to connect to the database: %v", err)
 	}
@@ -52,7 +53,7 @@ func TestGetVerses(t *testing.T) {
 		ctx          = context.Background()
 		targetResult = &model.Verse{Number: 2, Song: "Help!", Band: "The Beatles", Lines: []string{"With a loving heart"}}
 	)
-	db, err := pg.Dial()
+	db, err := pg.Dial(ctx)
 	if err != nil {
 		t.Errorf("[TestGetVerses] Failed to connect to the database: %v", err)
 	}
@@ -83,7 +84,7 @@ func TestUpdate(t *testing.T) {
 		updatedSong      = &model.Song{Model: gorm.Model{ID: id}, Band: "The Beatles", Name: "Do not help", Lyrics: "Do not help me!"}
 		ctx              = context.Background()
 	)
-	db, err := pg.Dial()
+	db, err := pg.Dial(ctx)
 	if err != nil {
 		t.Errorf("[TestUpdate] Failed to connect to the database: %s", err)
 	}
@@ -126,7 +127,7 @@ func TestGetAllFilteredPaginated(t *testing.T) {
 		songForFilter          = &model.Song{Band: "The Be", Name: "Help!"}
 		targetCountSongs int64 = 1
 	)
-	db, err := pg.Dial()
+	db, err := pg.Dial(ctx)
 	if err != nil {
 		t.Errorf("[TestGetAllFilteredPaginated] Failed to connect to the database: %v", err)
 	}
@@ -162,7 +163,7 @@ func TestGetAllFilteredPaginatedNoEnoughSongs(t *testing.T) {
 		pageOpts                 = &model.Page{Number: 2, Size: 2}
 		expectedCountSongs int64 = 1
 	)
-	db, err := pg.Dial()
+	db, err := pg.Dial(ctx)
 	if err != nil {
 		t.Errorf("[TestGetAllFilteredPaginatedNoEnoughSongs] Failed to connect to the database: %v", err)
 	}
