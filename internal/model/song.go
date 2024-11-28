@@ -17,13 +17,15 @@ type SongRequestCreate struct {
 type SongRequestDelete struct {
 	Band   string `json:"band"`
 	Name   string `json:"name"`
-	ID     uint   `json:"id"`
+	ID     uint   `json:"id" `
 	Lyrics string `json:"lyrics"`
 }
+
 type SongRequestUpdate struct {
 	Band   string `json:"band"`
 	Name   string `json:"name"`
 	Lyrics string `json:"lyrics"`
+	ID     uint   `json:"id" binding:"required"`
 }
 
 type SongResponse struct {
@@ -64,6 +66,9 @@ func (s *SongRequestDelete) ToDB() *Song {
 
 func (s *SongRequestUpdate) ToDB() *Song {
 	return &Song{
+		Model: gorm.Model{
+			ID: s.ID,
+		},
 		Band:   s.Band,
 		Name:   s.Name,
 		Lyrics: s.Lyrics,
