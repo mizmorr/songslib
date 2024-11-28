@@ -1,8 +1,8 @@
 package model
 
 type Page struct {
-	Number int `json:"number"`
-	Size   int `json:"size"`
+	Number int `form:"number"`
+	Size   int `form:"size"`
 }
 
 func NewPage(number, size int) *Page {
