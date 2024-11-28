@@ -90,7 +90,7 @@ func (r *SongRepository) Update(ctx context.Context, song *model.Song) error {
 	return result.Error
 }
 
-func (r *SongRepository) GetVerses(ctx context.Context, song *model.Song, pageOpt model.Page) (*model.Verse, error) {
+func (r *SongRepository) GetVerses(ctx context.Context, song *model.Song, pageOpt *model.Page) (*model.Verse, error) {
 	offset := (pageOpt.Number - 1) * pageOpt.Size
 	minPos := offset
 	maxPos := offset + pageOpt.Size
@@ -111,6 +111,11 @@ func (r *SongRepository) getLines(song *model.Song, minPos, maxPos int) ([]strin
 				FROM unnest(string_to_array((select lyrics from songs where %s), E'\n')) WITH ORDINALITY AS lines(line, position)
         WHERE position > ? AND position <= ?`, conditionString)
 	result := r.db.Raw(query, minPos, maxPos).Scan(&lines)
+
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("No lines found with that size")
+	}
+
 	if result.Error != nil {
 		return nil, result.Error
 	}

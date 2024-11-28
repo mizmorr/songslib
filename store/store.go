@@ -18,7 +18,7 @@ type SongRepo interface {
 	Delete(ctx context.Context, song *model.Song) error
 	GetAllFiltredPaginated(ctx context.Context, song *model.Song, pageOpts *model.Page) (int64, []*model.Song, error)
 	Update(ctx context.Context, song *model.Song) error
-	GetVerses(ctx context.Context, song *model.Song, pageOpt model.Page) (*model.Verse, error)
+	GetVerses(ctx context.Context, song *model.Song, pageOpt *model.Page) (*model.Verse, error)
 }
 
 var _ SongRepo = (*repository.SongRepository)(nil)

@@ -40,7 +40,7 @@ func TestCreate(t *testing.T) {
 	if id != expectedID {
 		t.Errorf("[TestCreate] Expected ID to be %d, got %d", expectedID, id)
 	}
-	err = db.Unscoped().Delete(&song).Error
+	err = db.Unscoped().Delete(song).Error
 	if err != nil {
 		t.Errorf("[TestCreate] Failed to delete song: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestCreate(t *testing.T) {
 func TestGetVerses(t *testing.T) {
 	var (
 		song         = &model.Song{Band: "The Beatles", Name: "Help!", Lyrics: "Help me, please, help me now\nWith a loving heart\nI've been broken, but I'm trying to find my way\nBack to the light"}
-		pageOpt      = model.Page{Number: 2, Size: 1}
+		pageOpt      = &model.Page{Number: 2, Size: 1}
 		ctx          = context.Background()
 		targetResult = &model.Verse{Number: 2, Song: "Help!", Band: "The Beatles", Lines: []string{"With a loving heart"}}
 	)
@@ -71,9 +71,37 @@ func TestGetVerses(t *testing.T) {
 	}
 	song.ID = id
 
-	err = db.Unscoped().Delete(&song).Error
+	err = db.Unscoped().Delete(song).Error
 	if err != nil {
 		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
+	}
+}
+
+func TestGetVersesBadSize(t *testing.T) {
+	var (
+		song    = &model.Song{Band: "The Beatles", Name: "Help!", Lyrics: "Help me, please, help me now\nWith a loving heart\nI've been broken, but I'm trying to find my way\nBack to the light"}
+		pageOpt = &model.Page{Number: 3, Size: 3}
+		ctx     = context.Background()
+	)
+	db, err := pg.Dial(ctx)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to connect to the database: %v", err)
+	}
+	songRepo := NewSongRepository(db)
+	id, err := songRepo.Create(ctx, song)
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to create song: %v", err)
+	}
+	_, err = songRepo.GetVerses(ctx, song, pageOpt)
+	if err == nil {
+		t.Error("[TestGetVerses] Expected an error when size is greater than the total number of verses")
+	}
+	{
+		song.ID = id
+		err = db.Unscoped().Delete(song).Error
+		if err != nil {
+			t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
+		}
 	}
 }
 
@@ -114,7 +142,7 @@ func TestUpdate(t *testing.T) {
 	if afterUpdatingSong.Band != updatedSong.Band || afterUpdatingSong.Lyrics != updatedSong.Lyrics || afterUpdatingSong.Name != updatedSong.Name {
 		t.Errorf("[TestUpdate] Results don't match after update: %+v, expected %+v", afterUpdatingSong, updatedSong)
 	}
-	err = db.Unscoped().Delete(&song).Error
+	err = db.Unscoped().Delete(song).Error
 	if err != nil {
 		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
 	}
@@ -149,7 +177,7 @@ func TestGetAllFilteredPaginated(t *testing.T) {
 		t.Errorf("[TestGetAllFilteredPaginated] Expected selected song to have ID %d, got %d", id, selectedSongs[0].ID)
 	}
 
-	err = db.Unscoped().Delete(&song).Error
+	err = db.Unscoped().Delete(song).Error
 	if err != nil {
 		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
 	}
@@ -181,7 +209,7 @@ func TestGetAllFilteredPaginatedNoEnoughSongs(t *testing.T) {
 		t.Errorf("[TestGetAllFilteredPaginatedNoEnoughSongs] Expected total count to be %d, got %d", expectedCountSongs, totalCount)
 	}
 
-	err = db.Unscoped().Delete(&song).Error
+	err = db.Unscoped().Delete(song).Error
 	if err != nil {
 		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
 	}
