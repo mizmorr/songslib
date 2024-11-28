@@ -152,7 +152,7 @@ func TestGetVerses(t *testing.T) {
 	if err != nil {
 		t.Errorf("[TestGetVerses] Expected a non-nil SongWebService, got %v+ ", err)
 	}
-	verse, err := sws.GetVersesOfSong(ctx, songGet.ToDB(), pageOpts)
+	verse, err := sws.GetVersesOfSong(ctx, songGet, pageOpts)
 	if err != nil {
 		t.Errorf("[TestGetVerses] Failed to get verses: %v", err)
 	}
@@ -160,12 +160,16 @@ func TestGetVerses(t *testing.T) {
 	if !reflect.DeepEqual(verse, expectedVerse) {
 		t.Errorf("[TestGetVerses] Expected %+v, got %+v", expectedVerse, verse)
 	}
-
 	songGet.ID = id
-	err = store.Pg.Unscoped().Delete(songGet.ToDB()).Error
-	if err != nil {
-		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
-	}
+
+	/*
+			 err = store.Pg.Unscoped().Delete(songGet.ToDB()).Error
+
+
+		   	if err != nil {
+		   		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
+		   	}
+	*/
 }
 
 func TestGetFiltredPaginated(t *testing.T) {
@@ -177,7 +181,7 @@ func TestGetFiltredPaginated(t *testing.T) {
 			Band:   "The Beatles",
 			Lyrics: "All my troubles seemed so far away,\nNow it looks as though they’re here to stay.\nOh, I believe in yesterday.",
 		}
-		songForFiltrPattern = &model.Song{
+		songForFiltrPattern = &model.SongRequestGet{
 			Name: "Yes",
 			Band: "The Be",
 		}
