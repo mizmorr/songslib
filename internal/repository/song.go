@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/mizmorr/songslib/internal/model"
@@ -19,23 +20,23 @@ func NewSongRepository(db *pg.DB) *SongRepository {
 	return &SongRepository{db: db}
 }
 
-func (r *SongRepository) Create(ctx context.Context, model model.Song) (id uint, err error) {
-	result := r.db.Create(&model)
+func (r *SongRepository) Create(ctx context.Context, song *model.Song) (id uint, err error) {
+	result := r.db.Create(song)
 
 	if result.Error != nil {
 		return 0, result.Error
 	}
 
-	return model.ID, nil
+	return song.ID, nil
 }
 
-func (r *SongRepository) Delete(ctx context.Context, model model.Song) error {
+func (r *SongRepository) Delete(ctx context.Context, song *model.Song) error {
 	var result *gorm.DB
 
-	if model.ID == 0 {
-		result = r.db.Where("band=?", model.Band).Where("name=?", model.Name).Where("lyrics=?", model.Lyrics).Delete(&model)
+	if song.ID == 0 {
+		result = r.db.Where("band=?", song.Band).Where("name=?", song.Name).Where("lyrics=?", song.Lyrics).Delete(song)
 	} else {
-		result = r.db.Delete(&model)
+		result = r.db.Delete(song)
 	}
 	if result.Error != nil {
 		return result.Error
@@ -44,12 +45,52 @@ func (r *SongRepository) Delete(ctx context.Context, model model.Song) error {
 	return nil
 }
 
-func (r *SongRepository) Update(ctx context.Context, song model.Song) error {
-	result := r.db.Model(&song).Where("id = ?", song.ID).Updates(song)
+func (r *SongRepository) GetAllFiltredPaginated(ctx context.Context, song *model.Song, pageOpts *model.Page) (int64, []*model.Song, error) {
+	var (
+		totalSongs int64
+		songs      []*model.Song
+	)
+	conditionString := r.makeStringCondForGetAll(song)
+
+	query := r.db.Model(song).Where(conditionString)
+	query.Count(&totalSongs)
+
+	offset := (pageOpts.Number - 1) * pageOpts.Size
+
+	countSongsNeedToHave := int64(pageOpts.Size + offset)
+	if totalSongs < countSongsNeedToHave {
+		return totalSongs, nil, fmt.Errorf("Do not have enough songs to fulfill the page options")
+	}
+
+	result := query.Limit(pageOpts.Size).Offset(offset).Find(&songs)
+	if result.Error != nil {
+		return 0, nil, result.Error
+	}
+
+	return totalSongs, songs, nil
+}
+
+func (r *SongRepository) makeStringCondForGetAll(song *model.Song) string {
+	if song.ID != 0 {
+		return fmt.Sprintf("id = %d", song.ID)
+	}
+	conditionString := r.conditionStringBuilder(*song)
+
+	replaced := strings.ReplaceAll(conditionString, "=", " like ")
+
+	rgxpForReplaceQuotes := regexp.MustCompile(`'([^']*)'`)
+
+	stringToFilterType := rgxpForReplaceQuotes.ReplaceAllString(replaced, "'%$1%'")
+
+	return strings.ReplaceAll(stringToFilterType, "%''%", "''")
+}
+
+func (r *SongRepository) Update(ctx context.Context, song *model.Song) error {
+	result := r.db.Model(song).Where("id = ?", song.ID).Updates(song)
 	return result.Error
 }
 
-func (r *SongRepository) GetVerses(ctx context.Context, song model.Song, pageOpt model.Page) (*model.Verse, error) {
+func (r *SongRepository) GetVerses(ctx context.Context, song *model.Song, pageOpt model.Page) (*model.Verse, error) {
 	offset := (pageOpt.Number - 1) * pageOpt.Size
 	minPos := offset
 	maxPos := offset + pageOpt.Size
@@ -62,9 +103,9 @@ func (r *SongRepository) GetVerses(ctx context.Context, song model.Song, pageOpt
 	return r.makeVerse(verseLines, song, pageOpt.Number), nil
 }
 
-func (r *SongRepository) getLines(song model.Song, minPos, maxPos int) ([]string, error) {
+func (r *SongRepository) getLines(song *model.Song, minPos, maxPos int) ([]string, error) {
 	var lines []string
-	conditionString := r.conditionStringBuilder(song)
+	conditionString := r.conditionStringBuilder(*song)
 	query := fmt.Sprintf(`
 				SELECT line
 				FROM unnest(string_to_array((select lyrics from songs where %s), E'\n')) WITH ORDINALITY AS lines(line, position)
@@ -119,7 +160,7 @@ func (r *SongRepository) isEmpty(value any) bool {
 	return false
 }
 
-func (r *SongRepository) makeVerse(lines []string, song model.Song, verseNumber int) *model.Verse {
+func (r *SongRepository) makeVerse(lines []string, song *model.Song, verseNumber int) *model.Verse {
 	return &model.Verse{
 		Number: verseNumber,
 		Song:   song.Name,
