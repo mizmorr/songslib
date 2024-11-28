@@ -1,11 +1,14 @@
 package pg
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/mizmorr/songslib/config"
+	"github.com/mizmorr/songslib/pkg/util"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -19,14 +22,12 @@ var (
 	once       sync.Once
 )
 
-func Dial() (*DB, error) {
+func Dial(ctx context.Context) (*DB, error) {
 	conf := config.Get()
-
+	log := util.GetLogger(ctx)
 	if conf.PgURL == "" {
 		return nil, errors.New("PG_URL is not set")
 	}
-
-	// log:= logger.Get
 
 	once.Do(func() {
 		var (
@@ -37,15 +38,16 @@ func Dial() (*DB, error) {
 		for conf.PgConnAttempts > 0 {
 			db, err = gorm.Open(postgres.Open(conf.PgURL), &gorm.Config{})
 			if err == nil {
+				log.Info().Msg("Connected to PostgreSQL")
 				break
 			}
 
 			conf.PgConnAttempts--
-			// logInfo
+			log.Debug().Msg(fmt.Sprintf("Postgres is trying to connect, attempts left: %d", conf.PgConnAttempts))
+
 			time.Sleep(conf.PgTimeout)
 		}
 		if err != nil {
-			// logError
 			panic("Connection to PostgreSQL failed")
 		}
 		pgInstance = &DB{db}
