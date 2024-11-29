@@ -19,6 +19,7 @@ type Config struct {
 	PgHealthCheckPeriod time.Duration `env:"PG_HEALTH_CHECK_PERIOD"`
 	PgMaxIdleTime       time.Duration `env:"PG_MAX_IDLE_TIME"`
 	HTTPAddress         string        `env:"HTTP_ADDRESS"`
+	DBName              string        `env:"DB_NAME"`
 }
 
 var (
