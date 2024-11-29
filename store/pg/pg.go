@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -50,8 +51,45 @@ func Dial(ctx context.Context) (*DB, error) {
 		if err != nil {
 			panic("Connection to PostgreSQL failed")
 		}
-		pgInstance = &DB{db}
-	})
 
+		log.Debug().Msg("Creating DB if not exists..")
+
+		err = createDBIfNotExists(db)
+		if err != nil {
+			panic(err)
+		}
+
+		url := getUrlToDB()
+		dbCreated, err := gorm.Open(postgres.Open(url), &gorm.Config{})
+		if err != nil {
+			log.Info().Msg("Connection to db failed")
+			panic(err)
+		}
+
+		pgInstance = &DB{dbCreated}
+	})
 	return pgInstance, nil
+}
+
+func createDBIfNotExists(db *gorm.DB) error {
+	var exists bool
+
+	err := db.Raw("SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'songs')").Scan(&exists).Error
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		err := db.Exec("CREATE DATABASE songs").Error
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getUrlToDB() string {
+	conf := config.Get()
+	return strings.ReplaceAll(conf.PgURL, "localhost/?", fmt.Sprintf("localhost/%s?", "songs"))
 }
