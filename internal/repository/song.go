@@ -166,10 +166,13 @@ func (r *SongRepository) isEmpty(value any) bool {
 }
 
 func (r *SongRepository) makeVerse(lines []string, song *model.Song, verseNumber int) *model.Verse {
+	var songDB model.Song
+	r.db.First(song).Scan(&songDB)
+
 	return &model.Verse{
 		Number: verseNumber,
-		Song:   song.Name,
-		Band:   song.Band,
+		Song:   songDB.Name,
+		Band:   songDB.Band,
 		Lines:  lines,
 	}
 }
