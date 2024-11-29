@@ -32,6 +32,17 @@ func NewSongController(ctx context.Context, ws WebService) *SongController {
 	}
 }
 
+// Create godoc
+// @Summary Create a new song
+// @Description Create a new song record in the database with the provided details.
+// @Tags songs
+// @Accept  json
+// @Produce  json
+// @Param song body model.SongRequestCreate true "Song data to be created"
+// @Success 200 {object} gin.H {"id": 1} "Successfully created song"
+// @Failure 400 {object} e.AppError "Invalid input or request"
+// @Failure 500 {object} e.AppError "Internal server error"
+// @Router /songs/create [post]
 func (sc *SongController) Create(g *gin.Context) {
 	song := &model.SongRequestCreate{}
 
@@ -64,6 +75,17 @@ func (sc *SongController) Delete(g *gin.Context) {
 	g.JSON(http.StatusOK, gin.H{"status": "successfully deleted"})
 }
 
+// Update godoc
+// @Summary Update song information
+// @Description Update an existing song record with the provided details.
+// @Tags songs
+// @Accept  json
+// @Produce  json
+// @Param song body model.SongRequestUpdate true "Song data to be updated"
+// @Success 200 {object} gin.H {"status": "successfully updated"}
+// @Failure 400 {object} e.AppError "Invalid input or request"
+// @Failure 500 {object} e.AppError "Internal server error"
+// @Router /songs/update [put]
 func (sc *SongController) Update(g *gin.Context) {
 	song := &model.SongRequestUpdate{}
 
@@ -80,6 +102,18 @@ func (sc *SongController) Update(g *gin.Context) {
 	g.JSON(http.StatusOK, gin.H{"status": "successfully updated"})
 }
 
+// GetVersesOfSong godoc
+// @Summary Get verses of a song
+// @Description Retrieve all verses of a song based on the song details and pagination options provided.
+// @Tags songs
+// @Accept  json
+// @Produce  json
+// @Param song body model.SongRequestGet true "Song details for which verses need to be fetched"
+// @Param pageOpts query model.Page false "Pagination options"
+// @Success 200 {array} model.Verse "List of song verses"
+// @Failure 400 {object} e.AppError "Invalid input or request"
+// @Failure 500 {object} e.AppError "Internal server error"
+// @Router /songs/verses [get]
 func (sc *SongController) GetVersesOfSong(g *gin.Context) {
 	var (
 		song     = &model.SongRequestGet{}
@@ -104,6 +138,18 @@ func (sc *SongController) GetVersesOfSong(g *gin.Context) {
 	g.JSON(http.StatusOK, verse)
 }
 
+// GetAllFiltredPaginated godoc
+// @Summary Get filtered and paginated list of songs
+// @Description Retrieve a list of songs based on filtering criteria and pagination options.
+// @Tags songs
+// @Accept  json
+// @Produce  json
+// @Param song body model.SongRequestGet true "Filtering criteria for the songs"
+// @Param pageOpts query model.Page false "Pagination options"
+// @Success 200 {object} gin.H {"total_songs": 100, "songs": []model.Song} "Successfully retrieved filtered songs list"
+// @Failure 400 {object} e.AppError "Invalid input or request"
+// @Failure 500 {object} e.AppError "Internal server error"
+// @Router /songs [get]
 func (sc *SongController) GetAllFiltredPaginated(g *gin.Context) {
 	var (
 		song     = &model.SongRequestGet{}
