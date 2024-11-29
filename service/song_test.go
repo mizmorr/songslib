@@ -44,6 +44,17 @@ func TestCreate(t *testing.T) {
 	if id == 0 {
 		t.Error("[TestCreate] Failed to retrieve song ID")
 	}
+	songToDelete := &model.Song{
+		Model: gorm.Model{
+			ID: id,
+		},
+		Name: "Test Song",
+		Band: "Test Band",
+	}
+	err = store.Pg.Unscoped().Delete(songToDelete).Error
+	if err != nil {
+		t.Errorf("[TestDelete] Failed to delete song: %v", err)
+	}
 }
 
 func TestDelete(t *testing.T) {
@@ -161,15 +172,10 @@ func TestGetVerses(t *testing.T) {
 		t.Errorf("[TestGetVerses] Expected %+v, got %+v", expectedVerse, verse)
 	}
 	songGet.ID = id
-
-	/*
-			 err = store.Pg.Unscoped().Delete(songGet.ToDB()).Error
-
-
-		   	if err != nil {
-		   		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
-		   	}
-	*/
+	err = store.Pg.Unscoped().Delete(songGet.ToDB()).Error
+	if err != nil {
+		t.Errorf("[TestGetVerses] Failed to delete song: %v", err)
+	}
 }
 
 func TestGetFiltredPaginated(t *testing.T) {

@@ -40,7 +40,7 @@ func New(ctx context.Context) (*Store, error) {
 	}
 
 	logger.Debug().Msg("Running PostgreSQL migrations")
-	if err := migrations.AutoMigrate(pg.DB); err != nil {
+	if err := migrations.AutoMigrate(ctx, pg.DB); err != nil {
 		return nil, errors.Wrap(err, "pg.Store: failed to run migrations")
 	}
 
