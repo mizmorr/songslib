@@ -21,10 +21,10 @@ type SongRequestDelete struct {
 	Lyrics string `json:"lyrics"`
 }
 type SongRequestGet struct {
-	Band   string `json:"band"`
-	Name   string `json:"name"`
-	ID     uint   `json:"id" `
-	Lyrics string `json:"lyrics"`
+	Band   string `form:"band"`
+	Name   string `form:"name"`
+	ID     uint   `form:"id" `
+	Lyrics string `form:"lyrics"`
 }
 type SongRequestUpdate struct {
 	Band   string `json:"band"`
