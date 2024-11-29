@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mizmorr/songslib/internal/model"
-	e "github.com/mizmorr/songslib/pkg/errors"
+	"github.com/mizmorr/songslib/pkg/errors"
 	"github.com/mizmorr/songslib/service"
 )
 
@@ -39,10 +39,10 @@ func NewSongController(ctx context.Context, ws WebService) *SongController {
 // @Accept  json
 // @Produce  json
 // @Param song body model.SongRequestCreate true "Song data to be created"
-// @Success 200 {object} gin.H {"id": 1} "Successfully created song"
-// @Failure 400 {object} e.AppError "Invalid input or request"
-// @Failure 500 {object} e.AppError "Internal server error"
-// @Router /songs/create [post]
+// @Success 200 {object} map[string]string "Successfully created song"
+// @Failure 400 {object} errors.AppError "Invalid input or request"
+// @Failure 500 {object} errors.AppError "Internal server error"
+// @Router /song [post]
 func (sc *SongController) Create(g *gin.Context) {
 	song := &model.SongRequestCreate{}
 
@@ -52,13 +52,23 @@ func (sc *SongController) Create(g *gin.Context) {
 
 	createdID, err := sc.ws.Create(sc.ctx, song)
 	if err != nil {
-		respondWithError(g, e.ErrInternalServer, err.Error())
+		respondWithError(g, errors.ErrInternalServer, err.Error())
 		return
 	}
 
 	g.JSON(http.StatusOK, gin.H{"id": createdID})
 }
 
+// Delete godoc
+// @Summary Delete a song
+// @Description Delete a song by its ID
+// @Tags songs
+// @Accept json
+// @Produce json
+// @Param song body model.SongRequestDelete true "Song to delete"
+// @Success 200 {object} map[string]string "Successfully deleted"
+// @Failure 400 {object} errors.AppError "Bad request, invalid data"
+// @Router /song [delete]
 func (sc *SongController) Delete(g *gin.Context) {
 	song := &model.SongRequestDelete{}
 
@@ -68,7 +78,7 @@ func (sc *SongController) Delete(g *gin.Context) {
 
 	err := sc.ws.Delete(sc.ctx, song)
 	if err != nil {
-		respondWithError(g, e.ErrBadRequest, err.Error())
+		respondWithError(g, errors.ErrBadRequest, err.Error())
 		return
 	}
 
@@ -82,10 +92,10 @@ func (sc *SongController) Delete(g *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param song body model.SongRequestUpdate true "Song data to be updated"
-// @Success 200 {object} gin.H {"status": "successfully updated"}
-// @Failure 400 {object} e.AppError "Invalid input or request"
-// @Failure 500 {object} e.AppError "Internal server error"
-// @Router /songs/update [put]
+// @Success 200 {object} map[string]string "Successfully updated"
+// @Failure 400 {object} errors.AppError "Invalid input or request"
+// @Failure 500 {object} errors.AppError "Internal server error"
+// @Router /song [put]
 func (sc *SongController) Update(g *gin.Context) {
 	song := &model.SongRequestUpdate{}
 
@@ -95,7 +105,7 @@ func (sc *SongController) Update(g *gin.Context) {
 
 	err := sc.ws.Update(sc.ctx, song)
 	if err != nil {
-		respondWithError(g, e.ErrBadRequest, err.Error())
+		respondWithError(g, errors.ErrBadRequest, err.Error())
 		return
 	}
 
@@ -108,33 +118,33 @@ func (sc *SongController) Update(g *gin.Context) {
 // @Tags songs
 // @Accept  json
 // @Produce  json
-// @Param song body model.SongRequestGet true "Song details for which verses need to be fetched"
+// @Param song query model.SongRequestGet true "Song details for which verses need to be fetched"
 // @Param pageOpts query model.Page false "Pagination options"
 // @Success 200 {array} model.Verse "List of song verses"
-// @Failure 400 {object} e.AppError "Invalid input or request"
-// @Failure 500 {object} e.AppError "Internal server error"
-// @Router /songs/verses [get]
+// @Failure 400 {object} errors.AppError "Invalid input or request"
+// @Failure 500 {object} errors.AppError "Internal server error"
+// @Router /song/verses [get]
 func (sc *SongController) GetVersesOfSong(g *gin.Context) {
 	var (
 		song     = &model.SongRequestGet{}
 		pageOpts = &model.Page{}
 	)
 
-	if err := g.ShouldBindJSON(song); err != nil {
-		respondWithError(g, e.ErrBadRequest, err.Error())
+	if err := g.ShouldBindQuery(song); err != nil {
+		respondWithError(g, errors.ErrBadRequest, err.Error())
 		return
 	}
-
 	if err := g.ShouldBindQuery(pageOpts); err != nil {
-		respondWithError(g, e.ErrBadRequest, err.Error())
+		respondWithError(g, errors.ErrBadRequest, err.Error())
 		return
 	}
 
 	verse, err := sc.ws.GetVersesOfSong(sc.ctx, song, pageOpts)
 	if err != nil {
-		respondWithError(g, e.ErrInternalServer, err.Error())
+		respondWithError(g, errors.ErrInternalServer, err.Error())
 		return
 	}
+
 	g.JSON(http.StatusOK, verse)
 }
 
@@ -144,37 +154,38 @@ func (sc *SongController) GetVersesOfSong(g *gin.Context) {
 // @Tags songs
 // @Accept  json
 // @Produce  json
-// @Param song body model.SongRequestGet true "Filtering criteria for the songs"
+// @Param song query model.SongRequestGet true "Filtering criteria for the songs"
 // @Param pageOpts query model.Page false "Pagination options"
-// @Success 200 {object} gin.H {"total_songs": 100, "songs": []model.Song} "Successfully retrieved filtered songs list"
-// @Failure 400 {object} e.AppError "Invalid input or request"
-// @Failure 500 {object} e.AppError "Internal server error"
-// @Router /songs [get]
+// @Success 200 {object} map[string]string "Successfully retrieved filtered songs list"
+// @Failure 400 {object} errors.AppError "Invalid input or request"
+// @Failure 500 {object} errors.AppError "Internal server error"
+// @Router /song/pages [get]
 func (sc *SongController) GetAllFiltredPaginated(g *gin.Context) {
 	var (
 		song     = &model.SongRequestGet{}
 		pageOpts = &model.Page{}
 	)
 
-	if err := g.ShouldBindJSON(song); err != nil {
-		respondWithError(g, e.ErrBadRequest, err.Error())
+	if err := g.ShouldBindQuery(song); err != nil {
+		respondWithError(g, errors.ErrBadRequest, err.Error())
 		return
 	}
 
 	if err := g.ShouldBindQuery(pageOpts); err != nil {
-		respondWithError(g, e.ErrBadRequest, err.Error())
+		respondWithError(g, errors.ErrBadRequest, err.Error())
 		return
 	}
+
 	totalSongs, songs, err := sc.ws.GetAllFiltredPaginated(sc.ctx, song, pageOpts)
 	if err != nil {
-		respondWithError(g, e.ErrInternalServer, err.Error())
+		respondWithError(g, errors.ErrInternalServer, err.Error())
 		return
 	}
 
 	g.JSON(http.StatusOK, gin.H{"total_songs": totalSongs, "songs": songs})
 }
 
-func respondWithError(g *gin.Context, err e.AppError, details string) {
+func respondWithError(g *gin.Context, err errors.AppError, details string) {
 	err.Details = details
 	g.AbortWithStatusJSON(err.StatusCode, err)
 }
